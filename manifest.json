@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "VelogImg",
+  "description": "Velog 글 작성 중 마크다운 이미지 문법(![](url))을 HTML <img> 태그로 변환하여 이미지의 크기와 정렬을 손쉽게 조절할 수 있도록 도와주는 크롬 확장프로그램입니다.",
+  "version": "0.1.0",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://velog.io/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["pageScript.js"],
+      "matches": ["https://velog.io/*"]
+    }
+  ]
+}
