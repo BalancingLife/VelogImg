@@ -3,7 +3,7 @@
   const ORIGIN = "+VelogImg";
 
   let armedUntil = 0;
-  let active = null; // { cm, url, originalText, previousText, align, size }
+  let active = null; // { cm, url, originalText, previousText, align, size, borderOn, borderW }
   let outsideClickHandler = null;
 
   const autoUiConsumed = new Set(); // 자동 UI는 url당 1회만
@@ -39,18 +39,21 @@
   function findImageRange(value, url) {
     const esc = escRe(url);
 
+    // <p align=center><img ...></p>
     const pImgRe = new RegExp(
       `<p\\s+[^>]*align\\s*=\\s*["']?center["']?[^>]*>\\s*` +
         `<img\\s+[^>]*src\\s*=\\s*["']?${esc}["']?[^>]*>\\s*<\\/p>`,
       "i"
     );
 
+    // <img ...>  (+ optional <br clear="all">)
     const imgRe = new RegExp(
       `<img\\s+[^>]*src\\s*=\\s*["']?${esc}["']?[^>]*>` +
         `(?:\\s*\\n?\\s*<br\\s+clear\\s*=\\s*["']?all["']?\\s*\\/?>)?`,
       "i"
     );
 
+    // ![](...)
     const mdRe = new RegExp(`!\\[[^\\]]*\\]\\(${esc}\\)`);
 
     let m = pImgRe.exec(value);
@@ -65,15 +68,29 @@
     return null;
   }
 
-  function buildHtml(url, align, size) {
-    const sizeAttr = size ? ` width=${size}` : "";
+  function normalizePercent(size) {
+    if (!size) return "";
+    return size.endsWith("%") ? size : `${size}%`;
+  }
+
+  function buildBorderStyle(borderOn, borderW) {
+    if (!borderOn) return "";
+    const w = Number(borderW);
+    const safe = Number.isFinite(w) && w > 0 ? Math.min(w, 999) : 1;
+    return `border:${safe}px solid black;`;
+  }
+
+  function buildImgTag(url, align, size, borderOn, borderW) {
+    const sizeAttr = size ? ` width=${normalizePercent(size)}` : "";
+    const borderStyle = buildBorderStyle(borderOn, borderW);
+    const styleAttr = borderStyle ? ` style="${borderStyle}"` : "";
 
     if (align === "center") {
-      return `<p align=center><img src=${url}${sizeAttr}></p>`;
+      return `<p align=center><img src=${url}${sizeAttr}${styleAttr}></p>`;
     }
 
-    // left / right만 clear 추가
-    return `<img src=${url} align=${align}${sizeAttr}>\n<br clear="all">`;
+    // left/right는 clear를 반드시 1개만 붙인다
+    return `<img src=${url} align=${align}${sizeAttr}${styleAttr}>\n<br clear="all">`;
   }
 
   function getCurrentSnippetForUrl(cm, url) {
@@ -84,9 +101,10 @@
   }
 
   function parseStateFromSnippet(snippet) {
-    const state = { align: "center", size: "" };
+    const state = { align: "center", size: "", borderOn: false, borderW: 1 };
     if (!snippet) return state;
 
+    // align
     if (/align\s*=\s*right/i.test(snippet)) state.align = "right";
     else if (/align\s*=\s*left/i.test(snippet)) state.align = "left";
     else state.align = "center";
@@ -95,8 +113,27 @@
       state.align = "center";
     }
 
+    // size
     const m = snippet.match(/width\s*=\s*["']?([\d]+%?)["']?/i);
     if (m) state.size = m[1];
+
+    // border (style 기반)
+    const styleMatch = snippet.match(/style\s*=\s*["']([^"']*)["']/i);
+    if (styleMatch) {
+      const styleStr = styleMatch[1] || "";
+      const b = styleStr.match(/border\s*:\s*(\d+)px/i);
+      if (b) {
+        state.borderOn = true;
+        state.borderW = Math.min(Number(b[1]) || 1, 999);
+      }
+    }
+
+    // 혹시 border="1" 같은 옛 형태가 있으면 방어
+    const borderAttr = snippet.match(/border\s*=\s*["']?(\d+)["']?/i);
+    if (!state.borderOn && borderAttr) {
+      state.borderOn = true;
+      state.borderW = Math.min(Number(borderAttr[1]) || 1, 999);
+    }
 
     return state;
   }
@@ -137,13 +174,13 @@
 
   function applyPreview() {
     if (!active) return;
-    const { cm, url, align, size } = active;
+    const { cm, url, align, size, borderOn, borderW } = active;
     const value = cm.getDoc().getValue();
     const range = findImageRange(value, url);
     if (!range) return;
 
     cm.getDoc().replaceRange(
-      buildHtml(url, align, size),
+      buildImgTag(url, align, size, borderOn, borderW),
       cm.getDoc().posFromIndex(range.index),
       cm.getDoc().posFromIndex(range.index + range.length),
       ORIGIN
@@ -221,6 +258,8 @@
       previousText: prevSnippet,
       align: parsed.align,
       size: parsed.size,
+      borderOn: parsed.borderOn,
+      borderW: parsed.borderW,
     };
 
     const ui = document.createElement("div");
@@ -239,6 +278,7 @@
       gap:10px;
       align-items:center;
       white-space:nowrap;
+      max-width:90vw;
     `;
 
     ui.innerHTML = `
@@ -247,7 +287,9 @@
         <button data-align="center">⬍</button>
         <button data-align="right">➡</button>
       </div>
+
       <div class="divider"></div>
+
       <div class="sizeRow">
         <button data-size="25">25</button>
         <button data-size="50">50</button>
@@ -258,14 +300,26 @@
           <span class="percent">%</span>
         </div>
       </div>
+
       <div class="divider"></div>
+
+      <div class="borderRow">
+        <button data-border="toggle" title="border on/off">Border</button>
+        <div class="borderInputWrap" data-border-wrap>
+          <input data-border-input type="text" inputmode="numeric" placeholder="1" />
+          <span class="px">px</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
       <div class="actions">
         <button data-action="confirm">✓</button>
         <button data-action="cancel">✕</button>
       </div>
     `;
 
-    // --- 버튼 base + hover ---
+    // --- 버튼 base (hover는 아래에서 "active 기준 복원" 방식으로 제어) ---
     ui.querySelectorAll("button").forEach((b) => {
       b.style.cssText = `
         height:26px;
@@ -276,15 +330,46 @@
         cursor:pointer;
         transition: background .12s ease, border-color .12s ease;
       `;
+    });
+
+    // ✅ "눌림" 상태 계산 + 배경 적용 (hover 후에도 정확히 복원)
+    function getAlignActive(btn) {
+      return btn.dataset.align && btn.dataset.align === active.align;
+    }
+    function getSizeActive(btn) {
+      if (!btn.dataset.size) return false;
+      const s = active.size || "";
+      const n = s.endsWith("%") ? s.slice(0, -1) : s;
+      return btn.dataset.size === n;
+    }
+    function getBorderActive(btn) {
+      return !!btn.dataset.border && !!active.borderOn;
+    }
+
+    function computeIsActive(btn) {
+      if (btn.dataset.align) return getAlignActive(btn);
+      if (btn.dataset.size) return getSizeActive(btn);
+      if (btn.dataset.border) return getBorderActive(btn);
+      return false; // confirm/cancel은 "눌림" 개념 없음
+    }
+
+    function applyButtonBg(btn) {
+      const isActive = computeIsActive(btn);
+      btn.style.background = isActive ? "#eaecef" : "#fff";
+    }
+
+    // ✅ hover는 "잠깐만" 바꾸고, mouseleave에서 active 여부로 정확히 복원
+    ui.querySelectorAll("button").forEach((b) => {
       b.addEventListener("mouseenter", () => {
         b.style.background = "#f6f8fa";
       });
       b.addEventListener("mouseleave", () => {
-        b.style.background = "#fff";
+        // 핵심: 무조건 흰색으로 돌리지 말고, active면 active색 유지
+        applyButtonBg(b);
       });
     });
 
-    //  가운데 정렬 아이콘만 크기 조정 (25px)
+    // 가운데 정렬 아이콘만(작고 정렬 맞추기)
     const centerBtn = ui.querySelector('[data-align="center"]');
     if (centerBtn) {
       centerBtn.style.fontSize = "23px";
@@ -331,35 +416,85 @@
       color:#111827;
     `;
 
+    const borderRow = ui.querySelector(".borderRow");
+    borderRow.style.cssText = `
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+    `;
+
+    const borderWrap = ui.querySelector("[data-border-wrap]");
+    borderWrap.style.cssText = `
+      display:none;
+      align-items:center;
+      height:26px;
+      gap:3px;
+      padding:0 6px;
+      border:1px solid #d0d7de;
+      border-radius:8px;
+    `;
+
+    const borderInput = ui.querySelector("[data-border-input]");
+    borderInput.style.cssText = `
+      width:15px;
+      height:24px;
+      border:none;
+      outline:none;
+      padding:0;
+      text-align:right;
+      font-variant-numeric: tabular-nums;
+      color:#111827;
+    `;
+
+    const px = ui.querySelector(".px");
+    px.style.cssText = `
+      color:#9aa4b2;
+      font-size:12px;
+    `;
+
+    // placeholder 더 옅게
     const style = document.createElement("style");
     style.textContent = `
       #__velogimg_ui input::placeholder { color: #b6c0cc; }
     `;
     ui.appendChild(style);
 
-    // --- active 표시 ---
+    // --- active 표시 + border wrap show/hide ---
     function paintActiveAlign() {
-      ui.querySelectorAll("[data-align]").forEach((b) => {
-        b.style.background =
-          b.dataset.align === active.align ? "#eaecef" : "#fff";
-      });
-    }
-    function paintActiveSize() {
-      const s = active.size || "";
-      const n = s.endsWith("%") ? s.slice(0, -1) : s;
-      ui.querySelectorAll("[data-size]").forEach((b) => {
-        b.style.background = b.dataset.size === n ? "#eaecef" : "#fff";
-      });
+      ui.querySelectorAll("[data-align]").forEach(applyButtonBg);
     }
 
+    function paintActiveSize() {
+      ui.querySelectorAll("[data-size]").forEach(applyButtonBg);
+    }
+
+    function paintActiveBorder() {
+      const toggle = ui.querySelector('[data-border="toggle"]');
+      const wrap = ui.querySelector("[data-border-wrap]");
+      const inp = ui.querySelector("[data-border-input]");
+
+      if (toggle) applyButtonBg(toggle);
+      if (!wrap || !inp) return;
+
+      if (active.borderOn) {
+        wrap.style.display = "inline-flex";
+        inp.value = String(active.borderW || 1);
+      } else {
+        wrap.style.display = "none";
+        inp.value = "";
+      }
+    }
+
+    // 초기 페인트 (여기서 "눌림"이 정확히 반영됨)
     paintActiveAlign();
     if (active.size) {
       const n = active.size.endsWith("%")
         ? active.size.slice(0, -1)
         : active.size;
       input.value = n;
-      paintActiveSize();
     }
+    paintActiveSize();
+    paintActiveBorder();
 
     let timer = null;
     function debounce() {
@@ -371,30 +506,55 @@
       const btn = e.target.closest("button");
       if (!btn) return;
 
+      // align
       if (btn.dataset.align) {
         active.align = btn.dataset.align;
         paintActiveAlign();
         paintActiveSize();
+        paintActiveBorder();
         applyPreview();
+        return;
       }
 
+      // size quick
       if (btn.dataset.size) {
         input.value = btn.dataset.size;
         active.size = `${btn.dataset.size}%`;
         paintActiveSize();
+        paintActiveBorder();
         applyPreview();
+        return;
       }
 
+      // border toggle
+      if (btn.dataset.border) {
+        active.borderOn = !active.borderOn;
+
+        // ON 되는 순간: 기본 1px로 세팅 + input 열기
+        if (active.borderOn) {
+          active.borderW = 1;
+        }
+
+        paintActiveBorder();
+        paintActiveAlign();
+        paintActiveSize();
+        applyPreview();
+
+        if (active.borderOn) {
+          const inp = ui.querySelector("[data-border-input]");
+          if (inp) inp.focus();
+        }
+        return;
+      }
+
+      // actions
       if (btn.dataset.action === "confirm") removeUI({ keepState: true });
       if (btn.dataset.action === "cancel") removeUI({ keepState: false });
     });
 
     // input 1~100만 "들어가게" (100 초과는 입력 자체를 잘라냄)
     input.addEventListener("input", () => {
-      // 숫자만
       let raw = input.value.replace(/[^\d]/g, "");
-
-      // 길이 제한: 3자리까지만
       if (raw.length > 3) raw = raw.slice(0, 3);
 
       // 0/000 같은 케이스 정리
@@ -415,6 +575,22 @@
       active.size = `${n}%`;
       paintActiveSize();
       debounce();
+    });
+
+    // ✅ border px 입력 (원하는 만큼, 1~999)
+    borderInput.addEventListener("input", () => {
+      let raw = borderInput.value.replace(/[^\d]/g, "");
+      if (raw.length > 3) raw = raw.slice(0, 3);
+
+      borderInput.value = raw;
+
+      const n = Number(raw);
+      if (!Number.isFinite(n) || n < 1) return;
+
+      active.borderOn = true;
+      active.borderW = Math.min(n, 999);
+      paintActiveBorder();
+      applyPreview();
     });
 
     document.body.appendChild(ui);
