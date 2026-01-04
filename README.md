@@ -1,4 +1,7 @@
 # VelogImg
+
+<img width="400" alt="image" src="https://github.com/user-attachments/assets/3627ee6b-f589-4c77-9cbe-6c882ad18b73" />
+
 **VelogImg**는 Velog 글 작성 중 이미지를 더 쉽고 직관적으로 다룰 수 있도록 도와주는 **Chrome 확장 프로그램**입니다.  
 기존의 마크다운 이미지 문법 `![]()`을 HTML `<img>` 태그 기반으로 변환하여,  
 **이미지 정렬, 크기, 테두리(border)** 를 UI로 간편하게 조절할 수 있습니다.
@@ -7,27 +10,19 @@
 ## 주요 기능
 
 ### 🖼 이미지 정렬
-- **Left / Center / Right** 정렬 지원
-- Center 정렬 시 `<p align="center">` 구조 사용
-- Left / Right 정렬 시 자동으로  
-  `<br clear="all">` 을 추가하여 이후 텍스트 흐름 문제를 방지
+- **Left / Center** 정렬 지원
 
 ---
 
 ### 📐 이미지 크기 조절
 - 버튼으로 빠르게 선택: **25 / 50 / 75 / 100 (%)**
 - 직접 퍼센트 입력 가능 (1 ~ 100)
-- 현재 선택된 크기는 버튼 상태로 즉시 표시
 
 ---
 
-### 🖊 이미지 테두리(Border) 설정
-- **Border ON / OFF 버튼**
-  - ON 시 기본 **1px 테두리**가 즉시 적용
-- **px 단위 자유 입력**
-  - 원하는 테두리 두께를 숫자로 직접 입력
-- UI 상태가 항상 동기화되어  
-  **현재 이미지에 적용된 옵션을 한눈에 확인 가능**
+### 🧩 다중 이미지 레이아웃
+- HTML <table> 태그를 활용한 2열 / 3열 이미지 **row 배치** 지원
+- 이미지들을 깔끔한 그리드 형태로 구성 가능
 
 
 ## 사용 방법
@@ -36,18 +31,28 @@
 3. 이미지 위에 나타나는 **VelogImg UI**에서
 - 정렬
 - 크기
-- 테두리(Border)
-를 원하는 대로 설정합니다.
+- 레이아웃 간편 배치
+옵션을 원하는 대로 설정합니다.
+
+설정 내용은 즉시 반영됩니다.
 
 ---
 
-### 사용 전
-<img width="1080" height="720" alt="VelogImg1" src="https://github.com/user-attachments/assets/98533b59-68d3-4c86-912a-1adad2d6fef8" />
+## 사용 예시
+
+<img width="1000"  alt="1" src="https://github.com/user-attachments/assets/0885ccfe-2e6e-4221-97b6-3c02aa78f796" />
 
 ---
-### 사용 후
-<img width="1080" height="720" alt="VelogImg2" src="https://github.com/user-attachments/assets/0287c16e-050c-4c17-911e-af94d6ad1f9a" />
 
+<img width="1000"  alt="2" src="https://github.com/user-attachments/assets/180df8f1-0e00-436b-8a11-009329ac44c7" />
+
+---
+
+<img width="1000"  alt="3" src="https://github.com/user-attachments/assets/2f339797-d547-45b9-8ba7-79ce62d1801c" />
+
+---
+
+<img width="1000"  alt="4" src="https://github.com/user-attachments/assets/b28f0a8d-3025-46af-bf1c-b449419b558a" />
 
 ---
 
@@ -68,12 +73,17 @@ VelogImg는 어떠한 개인정보도 수집하지 않습니다.
 ---
 
 ### 🧪 버전 히스토리
-#### v0.1.1
-- 이미지 Border ON/OFF 기능 추가
+v1.0.0
+- Right 정렬 및 Border 기능 제거 (실제 글 게시시에 기능 발현하지 않아 제거하였습니다.) 
+- Table 태그 기반 다중 이미지 배치 기능 구현
+- UI 단순화 및 핵심 기능 중심 재구성
+
+v0.1.1
+- 이미지 Border ON / OFF 기능 추가
 - px 단위 테두리 두께 직접 입력 지원
 - 버튼 active 상태 UI 개선
 
-#### v0.1.0
-- 이미지 정렬(left / center / right)
-- 이미지 크기 조절 UI
-- 자동 <br clear="all"> 처리
+v0.1.0
+- 이미지 정렬(left / center / right) 기능
+- 이미지 크기 조절 UI 제공
+- left / right 정렬 시 자동 <br clear="all"> 처리
