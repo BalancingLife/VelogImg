@@ -6,6 +6,7 @@
 기존의 마크다운 이미지 문법 `![]()`을 HTML `<img>` 태그 기반으로 변환하여,  
 **이미지 정렬, 크기, 테두리(border)** 를 UI로 간편하게 조절할 수 있습니다.
 
+👉 [**설치하러 가기**](https://chromewebstore.google.com/detail/velogimg/hncigpmlgnfejblfcdkcmapbjikflkig?hl=ko&utm_source=ext_sidebar)
 
 ## 주요 기능
 
@@ -40,39 +41,39 @@
 
 ## 사용 예시
 
-<img width="1000"  alt="1" src="https://github.com/user-attachments/assets/0885ccfe-2e6e-4221-97b6-3c02aa78f796" />
+### Before
+<img width="800"  alt="1" src="https://github.com/user-attachments/assets/0885ccfe-2e6e-4221-97b6-3c02aa78f796" />
 
 ---
 
-<img width="1000"  alt="2" src="https://github.com/user-attachments/assets/180df8f1-0e00-436b-8a11-009329ac44c7" />
+### After
+<img width="800"  alt="2" src="https://github.com/user-attachments/assets/180df8f1-0e00-436b-8a11-009329ac44c7" />
 
 ---
 
-<img width="1000"  alt="3" src="https://github.com/user-attachments/assets/2f339797-d547-45b9-8ba7-79ce62d1801c" />
+### Before
+<img width="800"  alt="3" src="https://github.com/user-attachments/assets/2f339797-d547-45b9-8ba7-79ce62d1801c" />
 
 ---
 
-<img width="1000"  alt="4" src="https://github.com/user-attachments/assets/b28f0a8d-3025-46af-bf1c-b449419b558a" />
+### After
+<img width="800"  alt="4" src="https://github.com/user-attachments/assets/b28f0a8d-3025-46af-bf1c-b449419b558a" />
 
 ---
 
 ## 🔐 개인정보 및 보안
+
 VelogImg는 어떠한 개인정보도 수집하지 않습니다.
 모든 동작은 브라우저 로컬 환경에서만 이루어집니다.
 외부 서버로 데이터가 전송되지 않습니다.
 
-### 📄 Privacy Policy
-👉 https://github.com/BalancingLife/VelogImg/blob/main/PRIVACY.md
+---
 
-
-주의 사항
-- 본 확장프로그램은 Velog(https://velog.io)에서만 동작합니다.
-- 다른 Markdown 플랫폼(GitHub, Notion 등)은 지원하지 않습니다.
-- Velog 에디터 정책 변경에 따라 동작이 달라질 수 있습니다.
+👉 [**설치하러 가기**](https://chromewebstore.google.com/detail/velogimg/hncigpmlgnfejblfcdkcmapbjikflkig?hl=ko&utm_source=ext_sidebar)
 
 ---
 
-### 🧪 버전 히스토리
+🧪 버전 히스토리
 v1.0.0
 - Right 정렬 및 Border 기능 제거 (실제 글 게시시에 기능 발현하지 않아 제거하였습니다.) 
 - Table 태그 기반 다중 이미지 배치 기능 구현
